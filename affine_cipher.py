@@ -1,25 +1,40 @@
-from math import gcd
-
 def affine_encrypt(plaintext, a, b):
+    """Encrypts plaintext using the Affine Cipher."""
     ciphertext = ""
     for char in plaintext:
         if char.isalpha():
-            shift = (a * (ord(char.lower()) - ord('a')) + b) % 26
-            ciphertext += chr(shift + ord('a'))
+            # Convert character to a number (0-25)
+            num = ord(char.lower()) - ord('a')
+            # Apply Affine transformation: E(x) = (ax + b) % 26
+            encrypted_num = (a * num + b) % 26
+            # Convert the number back to a letter
+            ciphertext += chr(encrypted_num + ord('a'))
         else:
+            # Non-alphabet characters remain unchanged
             ciphertext += char
     return ciphertext
 
 def affine_decrypt(ciphertext, a, b):
-    a_inv = pow(a, -1, 26)  # Modular multiplicative inverse of a mod 26
+    """Decrypts ciphertext using the Affine Cipher."""
+    # Calculate modular inverse of a modulo 26
+    a_inv = mod_inverse(a, 26)
     plaintext = ""
     for char in ciphertext:
         if char.isalpha():
-            shift = (a_inv * (ord(char.lower()) - ord('a') - b)) % 26
-            plaintext += chr(shift + ord('a'))
+            # Convert character to a number (0-25)
+            num = ord(char.lower()) - ord('a')
+            # Apply inverse Affine transformation: D(x) = a_inv(x - b) % 26
+            decrypted_num = (a_inv * (num - b)) % 26
+            # Convert the number back to a letter
+            plaintext += chr(decrypted_num + ord('a'))
         else:
+            # Non-alphabet characters remain unchanged
             plaintext += char
     return plaintext
 
-def validate_affine_key(a):
-    return gcd(a, 26) == 1
+def mod_inverse(a, m):
+    """Returns the modular inverse of a under modulo m."""
+    for i in range(1, m):
+        if (a * i) % m == 1:
+            return i
+    return None
