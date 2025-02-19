@@ -143,11 +143,12 @@ def AES_ENC():
     print("\n\n[1] ----- AES ENCRYPTION -----")
     print("=> Alice encrypting the message with the Shared Symmetric Key...")
 
+    message_file = "Alice/message.txt"
     # Check File exist or not
     if not os.path.exists("Alice/secret_key.txt"):
         print("=> Symmetric Key Not Found!")
         return
-    elif not os.path.exists("Alice/message.txt"):
+    elif not os.path.exists(message_file):
         print("=> File to be Encrypted Not Found!")
         return
     
@@ -162,7 +163,7 @@ def AES_ENC():
     secret_key = bytes.fromhex(secret_key)
 
     # Read the message to be encrypted
-    with open("Alice/message.txt", "rb") as f:
+    with open(message_file, "rb") as f:
         plaintext = f.read()
 
     # Encrypt and Save the File
