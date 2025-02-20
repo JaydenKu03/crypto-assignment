@@ -1,6 +1,6 @@
 import os
 
-# AES S-box (AES standard)
+# AES S-box (Substitution box) for byte substitution during encryption
 s_box = [
     0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,
     0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0,
@@ -20,7 +20,7 @@ s_box = [
     0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16
 ]
 
-# Inverse S-box (AES standard)
+# Inverse S-box (AES standard) for byte substitution during decryption
 inv_s_box = [
     0x52, 0x09, 0x6a, 0xd5, 0x30, 0x36, 0xa5, 0x38, 0xbf, 0x40, 0xa3, 0x9e, 0x81, 0xf3, 0xd7, 0xfb,
     0x7c, 0xe3, 0x39, 0x82, 0x9b, 0x2f, 0xff, 0x87, 0x34, 0x8e, 0x43, 0x44, 0xc4, 0xde, 0xe9, 0xcb,
@@ -40,7 +40,7 @@ inv_s_box = [
     0x17, 0x2b, 0x04, 0x7e, 0xba, 0x77, 0xd6, 0x26, 0xe1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0c, 0x7d
 ]
 
-# Rcon
+# Rcon (Round Constant) for in key expansion
 r_con = [
     0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36, 0x6c, 0xd8, 0xab, 0x4d, 0x9a, 0x2f,
     0x5e, 0xbc, 0x63, 0xc6, 0x97, 0x35, 0x6a, 0xd4, 0xb3, 0x7d, 0xfa, 0xef, 0xc5, 0x91, 0x39, 0x72,
@@ -60,6 +60,7 @@ r_con = [
     0xc2, 0x9f, 0x25, 0x4a, 0x94, 0x33, 0x66, 0xcc, 0x83, 0x1d, 0x3a, 0x74, 0xe8, 0xcb, 0x8d
 ]
 
+# substitutes each byte in the state with the corresponding byte in the S-box
 def sub_bytes(state):
     for i in range(4):
         for j in range(4):
@@ -72,10 +73,11 @@ def inv_sub_bytes(state):
             state[i][j] = inv_s_box[state[i][j]]
     return state
 
+# shiftRows transformation: shifts the rows of the state matrix
 def shift_rows(state):
-    state[1] = state[1][1:] + state[1][:1]
-    state[2] = state[2][2:] + state[2][:2]
-    state[3] = state[3][3:] + state[3][:3]
+    state[1] = state[1][1:] + state[1][:1] #Shift first row by 1 byte
+    state[2] = state[2][2:] + state[2][:2] #Shift second row by 2 byte
+    state[3] = state[3][3:] + state[3][:3] #Shift third row by 3 byte
     return state
 
 def inv_shift_rows(state):
@@ -84,6 +86,7 @@ def inv_shift_rows(state):
     state[3] = state[3][-3:] + state[3][:-3]
     return state
 
+# mixes the columns of the state matrix using matrix multiplicatio
 def mix_columns(state):
     for i in range(4):
         s0 = state[0][i]
@@ -120,12 +123,14 @@ def multiply(a, b):
         b >>= 1
     return p & 0xff
 
+# add the round key to the state using XOR operation
 def add_round_key(state, round_key):
     for i in range(4):
         for j in range(4):
             state[i][j] ^= round_key[i][j]
     return state
 
+# expands the key into a key schedule for all rounds
 def key_expansion(key, key_size):
     nk = key_size // 32
     nr = nk + 6
@@ -143,9 +148,11 @@ def key_expansion(key, key_size):
         w[i] = [w[i-nk][j] ^ temp[j] for j in range(4)]
     return w
 
+# converts a byte array into a 4x4 state matrix
 def bytes_to_state(byte_array):
     return [[byte_array[i + 4*j] for j in range(4)] for i in range(4)]
 
+# converts a 4x4 state matrix into a byte array
 def state_to_bytes(state):
     return [state[i][j] for j in range(4) for i in range(4)]
 
@@ -175,16 +182,18 @@ def decrypt_block(ciphertext, key_schedule, nr):
     state = add_round_key(state, key_schedule[:4])
     return state_to_bytes(state)
 
+# pads the plaintext to be a multiple of 16 bytes
 def pad(data):
     padding_length = 16 - (len(data) % 16)
     return data + bytes([padding_length] * padding_length)
 
+# removes padding from the decrypted plaintext
 def unpad(data):
     padding_length = data[-1]
     return data[:-padding_length]
 
 def encrypt(plaintext, key, key_size):
-    key_schedule = key_expansion(key, key_size)
+    key_schedule = key_expansion(key, key_size) 
     nr = key_size // 32 + 6
     padded_plaintext = pad(plaintext)
     ciphertext = b''
@@ -208,16 +217,3 @@ def generate_symmetric_key(key_size):
 
     key_bytes = key_size // 8 
     return os.urandom(key_bytes)
-
-def main():
-    key_size = int(input("Enter key size (128, 192, or 256): "))
-    key = os.urandom(key_size // 8)
-    with open("message.txt", "rb") as f:
-        plaintext = f.read()
-    ciphertext = encrypt(plaintext, key, key_size)
-    with open("encrypted_message.txt", "wb") as f:
-        f.write(ciphertext)
-    decrypted_text = decrypt(ciphertext, key, key_size)
-    with open("decrypted_message.txt", "wb") as f:
-        f.write(decrypted_text)
-    print("Encryption and decryption completed successfully.")

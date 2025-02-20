@@ -4,7 +4,8 @@ import product_cipher as PC
 import rsa as RSA
 import aes as AES
 from math import gcd
-
+from affine_cipher import affine_encrypt, affine_decrypt
+from columnar_transposition import columnar_transposition_encrypt, columnar_transposition_decrypt
 
 def pause():
     input("\n\nPress Enter to continue...\n\n")
@@ -42,9 +43,9 @@ def main():
             exit()
 
 def Affine_Columnar():
-    plaintext = input("\n\nEnter the plaintext: ")
+    plaintext = input("\nEnter the plaintext: ")
 
-    # For Affine Cipher: Validate 'a' is coprime with 26
+    # Get Affine Cipher keys
     while True:
         a = int(input("Enter the value of a (Affine cipher key part, coprime with 26): "))
         if is_valid_affine_key(a):
@@ -52,10 +53,9 @@ def Affine_Columnar():
         else:
             print("Invalid value for 'a'. It must be coprime with 26. Try again.")
 
-    # For Affine Cipher: 'b' can be any integer
     b = int(input("Enter the value of b (Affine cipher key part): "))
 
-    # For Columnar Transposition Cipher: Ensure the key is not empty
+    # Get Columnar Transposition Cipher key
     while True:
         key = input("Enter the key for the Columnar Transposition Cipher: ").strip()
         if len(key) > 0:
@@ -63,23 +63,57 @@ def Affine_Columnar():
         else:
             print("Key cannot be empty. Please enter a valid key.")
 
-    # Measure encryption time with higher precision
+    # Test Affine Cipher alone
     start_time = time.perf_counter()
-    encrypted = PC.encrypt_product_cipher(plaintext, a, b, key)
+    affine_encrypted = affine_encrypt(plaintext, a, b)
     end_time = time.perf_counter()
-    encryption_time = end_time - start_time
+    affine_enc_time = end_time - start_time
 
-    # Measure decryption time with higher precision
     start_time = time.perf_counter()
-    decrypted = PC.decrypt_product_cipher(encrypted, a, b, key)
+    affine_decrypted = affine_decrypt(affine_encrypted, a, b)
     end_time = time.perf_counter()
-    decryption_time = end_time - start_time
+    affine_dec_time = end_time - start_time
+
+    # Test Columnar Transposition Cipher alone
+    start_time = time.perf_counter()
+    columnar_encrypted = columnar_transposition_encrypt(plaintext, key)
+    end_time = time.perf_counter()
+    columnar_enc_time = end_time - start_time
+
+    start_time = time.perf_counter()
+    columnar_decrypted = columnar_transposition_decrypt(columnar_encrypted, key)
+    end_time = time.perf_counter()
+    columnar_dec_time = end_time - start_time
+
+    # Test Product Cipher (Affine + Columnar)
+    start_time = time.perf_counter()
+    product_encrypted = PC.encrypt_product_cipher(plaintext, a, b, key)
+    end_time = time.perf_counter()
+    product_enc_time = end_time - start_time
+
+    start_time = time.perf_counter()
+    product_decrypted = PC.decrypt_product_cipher(product_encrypted, a, b, key)
+    end_time = time.perf_counter()
+    product_dec_time = end_time - start_time
 
     # Display results
-    print(f"\nEncrypted text: {encrypted[:50]}...")  # Display first 50 chars of the encrypted text
-    print(f"Decrypted text: {decrypted[:50]}...")  # Display first 50 chars of the decrypted text
-    print(f"Encryption time: {encryption_time} seconds")
-    print(f"Decryption time: {decryption_time} seconds\n\n")
+    print("\n=== Affine Cipher Results ===")
+    print(f"Encrypted text: {affine_encrypted[:50]}...")
+    print(f"Decrypted text: {affine_decrypted[:50]}...")
+    print(f"Encryption time: {affine_enc_time:.10f} seconds")
+    print(f"Decryption time: {affine_dec_time:.10f} seconds\n")
+
+    print("\n=== Columnar Transposition Cipher Results ===")
+    print(f"Encrypted text: {columnar_encrypted[:50]}...")
+    print(f"Decrypted text: {columnar_decrypted[:50]}...")
+    print(f"Encryption time: {columnar_enc_time:.10f} seconds")
+    print(f"Decryption time: {columnar_dec_time:.10f} seconds\n")
+
+    print("\n=== Product Cipher (Affine + Columnar) Results ===")
+    print(f"Encrypted text: {product_encrypted[:50]}...")
+    print(f"Decrypted text: {product_decrypted[:50]}...")
+    print(f"Encryption time: {product_enc_time:.10f} seconds")
+    print(f"Decryption time: {product_dec_time:.10f} seconds\n")
 
 def RSA_ENC():
     # [1] 
