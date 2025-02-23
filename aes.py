@@ -75,9 +75,9 @@ def inv_sub_bytes(state):
 
 # shiftRows transformation: shifts the rows of the state matrix
 def shift_rows(state):
-    state[1] = state[1][1:] + state[1][:1] #Shift first row by 1 byte
-    state[2] = state[2][2:] + state[2][:2] #Shift second row by 2 byte
-    state[3] = state[3][3:] + state[3][:3] #Shift third row by 3 byte
+    state[1] = state[1][1:] + state[1][:1] #Shift second row by 1 byte
+    state[2] = state[2][2:] + state[2][:2] #Shift third row by 2 byte
+    state[3] = state[3][3:] + state[3][:3] #Shift fourth row by 3 byte
     return state
 
 def inv_shift_rows(state):
@@ -116,12 +116,12 @@ def multiply(a, b):
     for _ in range(8):
         if b & 1:
             p ^= a
-        hi_bit_set = a & 0x80
-        a <<= 1
+        hi_bit_set = a & 0x80 # Check if the most significant bit (MSB) of 'a' is set (1)
+        a <<= 1 # Left shift 'a'
         if hi_bit_set:
             a ^= 0x1b
-        b >>= 1
-    return p & 0xff
+        b >>= 1 # Right shift 'b'
+    return p & 0xff # Ensure the result is an 8-bit value
 
 # add the round key to the state using XOR operation
 def add_round_key(state, round_key):
@@ -132,20 +132,20 @@ def add_round_key(state, round_key):
 
 # expands the key into a key schedule for all rounds
 def key_expansion(key, key_size):
-    nk = key_size // 32
-    nr = nk + 6
-    w = [[0] * 4 for _ in range(4 * (nr + 1))]
-    for i in range(nk):
+    nk = key_size // 32 #Calculate the number of 32-bit words
+    nr = nk + 6 #Calculate the number of rounds (nr)
+    w = [[0] * 4 for _ in range(4 * (nr + 1))] #initialize empty array base on how many require words
+    for i in range(nk): #Copy the original key into the first nk words of the key schedule
         w[i] = [key[4*i], key[4*i+1], key[4*i+2], key[4*i+3]]
     for i in range(nk, 4 * (nr + 1)):
         temp = w[i-1]
-        if i % nk == 0:
-            temp = [temp[1], temp[2], temp[3], temp[0]]
+        if i % nk == 0: #g func
+            temp = [temp[1], temp[2], temp[3], temp[0]] # Rotate left
+            temp = [s_box[b] for b in temp] # SubWord
+            temp[0] ^= r_con[i//nk] # XOR with round constant
+        elif nk > 6 and i % nk == 4: # For AES-192 and AES-256, additional S-Box transformation
             temp = [s_box[b] for b in temp]
-            temp[0] ^= r_con[i//nk]
-        elif nk > 6 and i % nk == 4:
-            temp = [s_box[b] for b in temp]
-        w[i] = [w[i-nk][j] ^ temp[j] for j in range(4)]
+        w[i] = [w[i-nk][j] ^ temp[j] for j in range(4)] # Generate the new word by XOR-ing temp with the word `nk` positions earlier
     return w
 
 # converts a byte array into a 4x4 state matrix
@@ -197,7 +197,7 @@ def encrypt(plaintext, key, key_size):
     nr = key_size // 32 + 6
     padded_plaintext = pad(plaintext)
     ciphertext = b''
-    for i in range(0, len(padded_plaintext), 16):
+    for i in range(0, len(padded_plaintext), 16): #range(start, stop, step)
         block = padded_plaintext[i:i+16]
         ciphertext += bytes(encrypt_block(block, key_schedule, nr))
     return ciphertext
